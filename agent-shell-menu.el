@@ -338,7 +338,9 @@ When a permission request is pending, permission responses are spliced into the 
    ["Queue"
     ("q" "Open queue" agent-shell-queue-buffer-open)
     ("e" "Enqueue prompt" agent-shell-queue-enqueue)
-    ("E" "Edit task" agent-shell-queue-edit-task)]
+    ("E" "Edit task" agent-shell-queue-edit-task)
+    ("i" "Enable intercept" agent-shell-queue-enable-intercept-mode)
+    ("I" "Disable intercept" agent-shell-queue-disable-intercept-mode)]
    ["Capture"
     ("w" "Compose (write)" agent-shell-queue-capture)
     ("u" "Unassigned capture" agent-shell-queue-capture-unassigned)
