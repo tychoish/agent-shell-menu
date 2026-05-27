@@ -1,0 +1,121 @@
+#+TITLE: agent-shell-menu.el --- ACR menus and transient prefixes for agent-shell
+#+OPTIONS: toc:2 num:nil
+
+* Overview
+
+ACR-based interactive menus for [[https://github.com/xenodium/agent-shell][agent-shell]] sessions.  Provides transient
+prefix menus ~agent-shell-global-menu~ and ~agent-shell-session-menu~ for
+navigating and controlling agent sessions, along with completing-read interfaces
+for permission resolution, action selection, command insertion, and block
+collapse control.
+
+* Contents                                                       :TOC:
+- [[#overview][Overview]]
+- [[#installation][Installation]]
+  - [[#use-package][Use Package]]
+  - [[#manual][Manual]]
+- [[#api-reference][API Reference]]
+  - [[#transient-menus][Transient Menus]]
+  - [[#session-navigation][Session Navigation]]
+  - [[#action-and-command-selection][Action and Command Selection]]
+  - [[#permission-handling][Permission Handling]]
+  - [[#collapse-control][Collapse Control]]
+  - [[#configuration][Configuration]]
+- [[#license][License]]
+
+* Installation
+** Use Package
+#+BEGIN_SRC sh
+git clone https://github.com/tychoish/agent-shell-menu ~/.emacs.d/elpa/agent-shell-menu
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(use-package agent-shell-menu
+  :load-path "~/.emacs.d/elpa/agent-shell-menu"
+  :after agent-shell)
+#+END_SRC
+
+** Manual
+
+#+BEGIN_SRC sh
+git clone https://github.com/tychoish/agent-shell-menu ~/.emacs.d/elpa/agent-shell-menu
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'load-path "~/.emacs.d/elpa/agent-shell-menu")
+(require 'agent-shell-menu)
+#+END_SRC
+
+* API Reference
+
+** Transient Menus
+
+*** ~agent-shell-global-menu~
+
+Global agent-shell operations.  A transient prefix covering session creation,
+navigation, queue management, and capture actions.  Bind to a convenient
+key for global access:
+
+#+BEGIN_SRC emacs-lisp
+(keymap-global-set "C-c a" #'agent-shell-global-menu)
+#+END_SRC
+
+*** ~agent-shell-session-menu~
+
+Actions for the current agent-shell session.  A transient prefix covering
+in-session navigation, submit/interrupt, viewport control, and queue
+operations for the active buffer.
+
+** Session Navigation
+
+*** ~agent-shell-switch-buffer~
+
+Switch to an agent-shell buffer with status, cwd, context, and age
+annotations via ~annotated-completing-read~.
+
+*** ~agent-shell-switch-project-session~
+
+Switch to an agent-shell buffer scoped to the current project.
+
+** Action and Command Selection
+
+*** ~agent-shell-select-action~
+
+Pick a common agent-shell action and run it via ~call-interactively~.  When a
+permission request is pending, permission responses are spliced into the menu
+alongside the standard actions.
+
+*** ~agent-shell-select-command~
+
+Insert one of the agent's advertised =/= commands at the prompt via
+~annotated-completing-read~.
+
+*** ~agent-shell-action-alist~
+
+Configurable alist mapping display names to command symbols for
+~agent-shell-select-action~.  Extend this to add custom actions to the menu:
+
+#+BEGIN_SRC emacs-lisp
+(add-to-list 'agent-shell-action-alist '("my custom action" . my-custom-command))
+#+END_SRC
+
+** Permission Handling
+
+*** ~agent-shell-resolve-permission~
+
+Resolve a pending permission prompt via ~annotated-completing-read~.  Presents
+the available choices (typically =yes=, =no=, =always=) drawn from the current
+permission button state.
+
+** Collapse Control
+
+*** ~agent-shell-select-collapse~
+
+Pick a collapse action via ~annotated-completing-read~.  Offers bulk
+expand/collapse, per-category toggles, and entries to flip the three
+expand-by-default customization variables (~thinking~, ~tool use~, ~agent message~).
+
+* License
+
+Copyright (C) tychoish.  GPL-3.0 or later.  See the source file header
+for the full license text.
