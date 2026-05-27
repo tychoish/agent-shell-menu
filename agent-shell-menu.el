@@ -77,6 +77,8 @@
     ("switch agent-shell" . agent-shell-switch-buffer)
     ("send region" . agent-shell-send-region)
     ("send file" . agent-shell-send-file)
+    ("send file (pick)" . agent-shell-menu-send-file)
+    ("send buffer" . agent-shell-menu-send-buffer)
     ("yank (DWIM)" . agent-shell-yank-dwim)
     ("queue request" . agent-shell-queue-enqueue)
     ("queue capture" . agent-shell-queue-capture)
@@ -318,6 +320,38 @@ When a permission request is pending, permission responses are spliced into the 
                 :require-match t
                 :history 'agent-shell-switch-project-session))))
 
+;;; Send content to agent shell
+
+;;;###autoload
+(defun agent-shell-menu-send-file ()
+  "Prompt for a file and send it to the current agent-shell session.
+Uses `read-file-name' for file selection, integrating with Consult/Vertico."
+  (interactive)
+  (agent-shell-insert
+   :text (agent-shell--get-files-context
+          :files (list (expand-file-name (read-file-name "Send file: "))))))
+
+;;;###autoload
+(defun agent-shell-menu-send-buffer ()
+  "Pick a buffer and send its contents to the current agent-shell session.
+File-visiting buffers are sent as @file references; others as raw text."
+  (interactive)
+  (let ((table (make-hash-table :test #'equal)))
+    (dolist (buf (seq-remove (lambda (b) (string-prefix-p " " (buffer-name b)))
+                             (buffer-list)))
+      (map-put! table (buffer-name buf)
+                (with-current-buffer buf
+                  (format "%-20s %s"
+                          (symbol-name major-mode)
+                          (or (buffer-file-name) "")))))
+    (when-let* ((name (annotated-completing-read table
+                                                 :prompt "Send buffer: "
+                                                 :require-match t))
+                (buf (get-buffer name)))
+      (if-let* ((file (buffer-file-name buf)))
+          (agent-shell-insert :text (agent-shell--get-files-context :files (list file)))
+        (agent-shell-insert :text (with-current-buffer buf (buffer-string)))))))
+
 ;;; Transient menus
 
 (defun agent-shell-menu--agent-review-available-p ()
@@ -367,6 +401,9 @@ When a permission request is pending, permission responses are spliced into the 
     ("R" "Resolve permission" agent-shell-resolve-permission)
     ("i" "Interrupt" agent-shell-interrupt)
     ("/" "Command menu" agent-shell-select-command)]
+   ["Send"
+    ("F" "Send file" agent-shell-menu-send-file)
+    ("B" "Send buffer" agent-shell-menu-send-buffer)]
    ["Queue"
     ("q" "Open queue" agent-shell-queue-buffer-open)
     ("e" "Enqueue prompt" agent-shell-queue-enqueue)

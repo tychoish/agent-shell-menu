@@ -287,8 +287,8 @@ produced 'Each alist entry must be a cons cell; got: #<buffer ...>'."
                    (lambda (_pos) #'ignore)))
           (let ((suffixes (agent-shell--session-permission-suffixes nil)))
             (should (= 2 (length suffixes)))
-            (should (equal "1" (transient--suffix-key (nth 0 suffixes))))
-            (should (equal "2" (transient--suffix-key (nth 1 suffixes))))))
+            (should (equal "1" (oref (nth 0 suffixes) key)))
+            (should (equal "2" (oref (nth 1 suffixes) key)))))
       (kill-buffer shell))))
 
 (ert-deftest agent-shell-menu/session-permission-suffixes-labels-include-button-text ()
@@ -302,7 +302,7 @@ produced 'Each alist entry must be a cons cell; got: #<buffer ...>'."
                   ((symbol-function 'agent-shell--permission-action-at)
                    (lambda (_pos) #'ignore)))
           (let* ((suffix (car (agent-shell--session-permission-suffixes nil)))
-                 (desc (plist-get (cdr suffix) :description)))
+                 (desc (oref suffix description)))
             (should (string-match-p "Allow for session" desc))))
       (kill-buffer shell))))
 
