@@ -287,8 +287,8 @@ produced 'Each alist entry must be a cons cell; got: #<buffer ...>'."
                    (lambda (_pos) #'ignore)))
           (let ((suffixes (agent-shell--session-permission-suffixes nil)))
             (should (= 2 (length suffixes)))
-            (should (equal "1" (oref (nth 0 suffixes) key)))
-            (should (equal "2" (oref (nth 1 suffixes) key)))))
+            (should (equal "1" (plist-get (agent-shell-test/suffix-plist (nth 0 suffixes)) :key)))
+            (should (equal "2" (plist-get (agent-shell-test/suffix-plist (nth 1 suffixes)) :key)))))
       (kill-buffer shell))))
 
 (ert-deftest agent-shell-menu/session-permission-suffixes-labels-include-button-text ()
@@ -302,7 +302,7 @@ produced 'Each alist entry must be a cons cell; got: #<buffer ...>'."
                   ((symbol-function 'agent-shell--permission-action-at)
                    (lambda (_pos) #'ignore)))
           (let* ((suffix (car (agent-shell--session-permission-suffixes nil)))
-                 (desc (oref suffix description)))
+                 (desc (plist-get (agent-shell-test/suffix-plist suffix) :description)))
             (should (string-match-p "Allow for session" desc))))
       (kill-buffer shell))))
 
@@ -337,6 +337,62 @@ which buffer is current when the action is invoked."
                   ((symbol-function 'agent-shell--permission-pending-p)
                    (lambda (&rest _) t)))
           (should (agent-shell--session-permission-pending-p)))
+      (kill-buffer shell))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; agent-shell-menu--in-session-p
+
+(ert-deftest agent-shell-menu/in-session-p-nil-when-no-session ()
+  "Returns nil when agent-shell--session-shell-buffer returns nil."
+  (cl-letf (((symbol-function 'agent-shell--session-shell-buffer) (lambda () nil)))
+    (should-not (agent-shell-menu--in-session-p))))
+
+(ert-deftest agent-shell-menu/in-session-p-non-nil-when-session ()
+  "Returns non-nil when agent-shell--session-shell-buffer returns a buffer."
+  (let ((shell (generate-new-buffer " *mock-in-session*")))
+    (unwind-protect
+        (cl-letf (((symbol-function 'agent-shell--session-shell-buffer)
+                   (lambda () shell)))
+          (should (agent-shell-menu--in-session-p)))
+      (kill-buffer shell))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; agent-shell--global-permission-suffixes
+
+(ert-deftest agent-shell-menu/global-permission-suffixes-empty-when-no-pending ()
+  "No suffixes generated when no permission is pending."
+  (cl-letf (((symbol-function 'agent-shell--session-shell-buffer) (lambda () nil)))
+    (should (null (agent-shell--global-permission-suffixes nil)))))
+
+(ert-deftest agent-shell-menu/global-permission-suffixes-one-per-button ()
+  "One transient suffix is produced per pending permission button."
+  (let ((shell (generate-new-buffer " *mock-global-shell*")))
+    (unwind-protect
+        (cl-letf (((symbol-function 'agent-shell--session-shell-buffer)
+                   (lambda () shell))
+                  ((symbol-function 'agent-shell--permission-buttons)
+                   (lambda () (list (cons "Allow" 10) (cons "Deny" 20))))
+                  ((symbol-function 'agent-shell--permission-action-at)
+                   (lambda (_pos) #'ignore)))
+          (let ((suffixes (agent-shell--global-permission-suffixes nil)))
+            (should (= 2 (length suffixes)))
+            (should (equal "1" (plist-get (agent-shell-test/suffix-plist (nth 0 suffixes)) :key)))
+            (should (equal "2" (plist-get (agent-shell-test/suffix-plist (nth 1 suffixes)) :key)))))
+      (kill-buffer shell))))
+
+(ert-deftest agent-shell-menu/global-permission-suffixes-labels-include-button-text ()
+  "Each suffix description includes the permission button label."
+  (let ((shell (generate-new-buffer " *mock-global-shell-2*")))
+    (unwind-protect
+        (cl-letf (((symbol-function 'agent-shell--session-shell-buffer)
+                   (lambda () shell))
+                  ((symbol-function 'agent-shell--permission-buttons)
+                   (lambda () (list (cons "Allow for session" 10))))
+                  ((symbol-function 'agent-shell--permission-action-at)
+                   (lambda (_pos) #'ignore)))
+          (let* ((suffix (car (agent-shell--global-permission-suffixes nil)))
+                 (desc (plist-get (agent-shell-test/suffix-plist suffix) :description)))
+            (should (string-match-p "Allow for session" desc))))
       (kill-buffer shell))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

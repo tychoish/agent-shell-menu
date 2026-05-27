@@ -239,6 +239,10 @@ Works from both agent-shell buffers and viewport buffers."
   (when-let* ((shell (agent-shell--session-shell-buffer)))
     (agent-shell--permission-pending-p :shell-buffer shell)))
 
+(defun agent-shell-menu--in-session-p ()
+  "Return non-nil when the current context has an associated agent-shell session."
+  (not (null (agent-shell--session-shell-buffer))))
+
 (defun agent-shell--session-permission-button-action (shell-buf pos)
   "Return an interactive command that activates the permission button at POS in SHELL-BUF."
   (lambda ()
@@ -251,8 +255,8 @@ Works from both agent-shell buffers and viewport buffers."
           (goto-char pos)
           (call-interactively cmd))))))
 
-(defun agent-shell--session-permission-suffixes (_group)
-  "Return transient suffixes for each pending permission button.
+(defun agent-shell--permission-suffixes-for (prefix)
+  "Return transient suffixes for each pending permission button under PREFIX.
 Keys are assigned as 1, 2, 3… in button order."
   (when-let* ((shell (agent-shell--session-shell-buffer))
               (buttons (with-current-buffer shell
@@ -260,11 +264,21 @@ Keys are assigned as 1, 2, 3… in button order."
     (seq-map-indexed
      (lambda (btn i)
        (transient-parse-suffix
-        'agent-shell-session-menu
+        prefix
         (list (number-to-string (1+ i))
               (format "Permission: %s" (car btn))
               (agent-shell--session-permission-button-action shell (cdr btn)))))
      buttons)))
+
+(defun agent-shell--session-permission-suffixes (_group)
+  "Return transient suffixes for each pending permission button.
+Keys are assigned as 1, 2, 3… in button order."
+  (agent-shell--permission-suffixes-for 'agent-shell-session-menu))
+
+(defun agent-shell--global-permission-suffixes (_group)
+  "Return transient suffixes for each pending permission button.
+Keys are assigned as 1, 2, 3… in button order."
+  (agent-shell--permission-suffixes-for 'agent-shell-global-menu))
 
 ;;; Action menu
 
@@ -361,6 +375,9 @@ File-visiting buffers are sent as @file references; others as raw text."
 ;;;###autoload
 (transient-define-prefix agent-shell-global-menu ()
   "Global agent-shell operations."
+  [:description "Permissions"
+   :if agent-shell--session-permission-pending-p
+   :setup-children agent-shell--global-permission-suffixes]
   [["Sessions"
     (";" "Switch to session" agent-shell-switch-buffer)
     ("," "Manager toggle" agent-shell-manager-toggle)
@@ -373,14 +390,21 @@ File-visiting buffers are sent as @file references; others as raw text."
     ("q" "Open queue" agent-shell-queue-buffer-open)
     ("e" "Enqueue prompt" agent-shell-queue-enqueue)
     ("E" "Edit task" agent-shell-queue-edit-task)
+    ("p" "Pause queue (session)" agent-shell-queue-pause
+     :if agent-shell-menu--in-session-p)
+    ("P" "Resume queue (session)" agent-shell-queue-resume
+     :if agent-shell-menu--in-session-p)
     ("i" "Enable intercept" agent-shell-queue-enable-intercept-mode)
     ("I" "Disable intercept" agent-shell-queue-disable-intercept-mode)]
-   ["Capture"
+   ["Queue Capture"
     ("w" "Compose (write)" agent-shell-queue-capture)
     ("u" "Unassigned capture" agent-shell-queue-capture-unassigned)
     ("r" "From region" agent-shell-queue-capture-from-region)
     ("y" "From clipboard" agent-shell-queue-capture-from-clipboard)
     ("c" "From context" agent-shell-queue-capture-from-context)]
+   ["Collapse" :if agent-shell-menu--in-session-p
+    ("x" "Collapse menu" agent-shell-select-collapse
+     :if agent-shell-menu--in-session-p)]
    ["Review" :if agent-shell-menu--agent-review-available-p
     ("V" "Review changes" agent-review
      :if agent-shell-menu--agent-review-available-p)]])

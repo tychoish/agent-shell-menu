@@ -11,6 +11,14 @@
        (root (file-name-directory (directory-file-name test-dir))))
   (add-to-list 'load-path root))
 
+(defun agent-shell-test/suffix-plist (suffix)
+  "Extract the plist from a parsed transient suffix spec SUFFIX.
+Handles both the (CLASS :key ...) cons format and the
+(LEVEL CLASS (:key ...)) tuple format produced by different transient versions."
+  (if (integerp (car suffix))
+      (nth 2 suffix)
+    (cdr suffix)))
+
 (defun transient-test/collect-keys (prefix-sym)
   "Return a list of all :key strings in PREFIX-SYM's transient layout."
   (let ((queue (list (get prefix-sym 'transient--layout)))
