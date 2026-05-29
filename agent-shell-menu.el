@@ -313,13 +313,13 @@ When a permission request is pending, permission responses are spliced into the 
 
 (defun agent-shell-extras--same-project-buffers ()
   "Return live agent-shell buffers sharing the current buffer's project directory."
-  (let ((dir default-directory))
-    ;; TODO refactor this to use seq-filter and (with-current-buffer) (simplification)
-    (cl-remove-if-not
-     (lambda (b)
-       (and (not (eq b (current-buffer)))
-            (equal (buffer-local-value 'default-directory b) dir)))
-     (agent-shell-buffers))))
+  (let ((dir default-directory)
+	(cb (current-buffer)))
+    (thread-last
+      (agent-shell-buffers)
+      (seq-filter (lambda (buf) (not (eq buf cb))))
+      (seq-filter (lambda (buf) (with-current-buffer b
+				  (equal default-directory dir)))))))
 
 ;;;###autoload
 (defun agent-shell-switch-project-session ()
@@ -327,8 +327,9 @@ When a permission request is pending, permission responses are spliced into the 
   (interactive)
   (switch-to-buffer
    (get-buffer (annotated-completing-read
-		(agent-shell--buffer-annotation (or (agent-shell-extras--same-project-buffers)
-						    (user-error "No other agent-shell sessions for this project")))
+		(agent-shell--buffer-annotation
+		 (or (agent-shell-extras--same-project-buffers)
+		     (user-error "No other agent-shell sessions for this project")))
                 :prompt "project session =>"
                 :category 'agent-shell-buffer
                 :require-match t
