@@ -319,8 +319,8 @@ When a permission request is pending, permission responses are spliced into the 
       (agent-shell-buffers)
       (seq-filter (lambda (buf) (not (eq buf cb))))
       (seq-filter (lambda (buf) (with-current-buffer b
-				  (equal default-directory dir)))))))
-
+				  (or (equal default-directory dir)
+				      (string-prefix-p default-directory dir))))))))
 ;;;###autoload
 (defun agent-shell-switch-project-session ()
   "Switch to another agent-shell session in the same project directory."
