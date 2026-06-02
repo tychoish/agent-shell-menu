@@ -318,7 +318,7 @@ When a permission request is pending, permission responses are spliced into the 
     (thread-last
       (agent-shell-buffers)
       (seq-filter (lambda (buf) (not (eq buf cb))))
-      (seq-filter (lambda (buf) (with-current-buffer b
+      (seq-filter (lambda (buf) (with-current-buffer buf
 				  (or (equal default-directory dir)
 				      (string-prefix-p default-directory dir))))))))
 ;;;###autoload
